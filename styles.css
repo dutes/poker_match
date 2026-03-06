@@ -27,10 +27,6 @@
   --text-muted:     #94a3b8;
   --text-gold:      #fbbf24;
 
-  --timer-full:     #22c55e;
-  --timer-mid:      #f59e0b;
-  --timer-low:      #ef4444;
-
   --border-radius:  10px;
   --card-radius:    6px;
   --card-w-mobile:  62px;
@@ -363,36 +359,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-
-/* Timer */
-.timer-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.timer-track {
-  flex: 1;
-  height: 6px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 3px;
-  overflow: hidden;
-}
-.timer-bar {
-  height: 100%;
-  width: 100%;
-  background: var(--timer-full);
-  border-radius: 3px;
-  transition: width 0.9s linear, background 0.3s;
-}
-.timer-bar.mid { background: var(--timer-mid); }
-.timer-bar.low { background: var(--timer-low); }
-.timer-label {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  min-width: 24px;
-  text-align: right;
 }
 
 /* Action buttons */

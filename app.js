@@ -10,7 +10,6 @@ const API_BASE    = 'https://deckofcardsapi.com/api/deck';
 const API_RETRY   = 3;       // max retries on failure
 const API_RETRY_DELAY = 1000; // ms between retries
 const MIN_CARDS   = 20;      // reshuffle if fewer remain
-const TIMER_SECS  = 10;      // decision timer seconds
 const BOT_MIN_DELAY = 500;   // ms bot "thinking" delay
 const BOT_MAX_DELAY = 900;
 
@@ -45,9 +44,6 @@ const gameState = {
   bb:                0.20,
   currentActor:      'player',   // 'player' | 'bot'
   actionCount:       0,          // actions taken this street
-  timerActive:       false,
-  timerInterval:     null,
-  timerSeconds:      TIMER_SECS,
   matchOver:         false,
   lastHandResult:    null,       // 'win' | 'lose' | 'tie'
   pick2Selected:     [],         // indices selected in Pick-2 UI
@@ -436,45 +432,11 @@ function botPick2(cards4) {
 }
 
 // ================================================================
-// TIMER
-// ================================================================
-
-function startDecisionTimer() {
-  stopTimer();
-  gameState.timerSeconds = TIMER_SECS;
-  gameState.timerActive  = true;
-  updateTimerDisplay();
-
-  gameState.timerInterval = setInterval(() => {
-    gameState.timerSeconds--;
-    updateTimerDisplay();
-    if (gameState.timerSeconds <= 0) {
-      stopTimer();
-      // Auto-action: fold if facing bet, else check
-      const autoAction = approxEq(gameState.streetBet, gameState.playerBetThisStreet) ? 'CHECK' : 'FOLD';
-      logEvent(`⏱ Time! Auto-${autoAction}`);
-      handlePlayerAction(autoAction);
-    }
-  }, 1000);
-}
-
-function stopTimer() {
-  if (gameState.timerInterval) {
-    clearInterval(gameState.timerInterval);
-    gameState.timerInterval = null;
-  }
-  gameState.timerActive  = false;
-  gameState.timerSeconds = TIMER_SECS;
-  updateTimerDisplay();
-}
-
-// ================================================================
 // GAME FLOW — STATE MACHINE
 // ================================================================
 
 /** Start or reset the entire match. Called from UI. */
 async function startNewMatch() {
-  stopTimer();
 
   // Reset game state
   Object.assign(gameState, {
@@ -625,7 +587,6 @@ async function startBettingRound(phase) {
 async function nextActorActs() {
   if (gameState.currentActor === 'player') {
     showActionButtons();
-    startDecisionTimer();
   } else {
     hideActionButtons();
     await delay(BOT_MIN_DELAY + Math.random() * (BOT_MAX_DELAY - BOT_MIN_DELAY));
@@ -652,7 +613,6 @@ async function handlePlayerAction(action) {
   const valid = getValidActions('player');
   if (!valid.includes(action)) return; // guard against stale clicks
 
-  stopTimer();
   hideActionButtons();
   await handleAction(action, 'player');
 }
@@ -760,7 +720,6 @@ async function dealCommunity(n, dealPhase, bettingPhase, streetName) {
 
 /** Called when one player folds. Award pot to winner. */
 async function endHandByFold(folder) {
-  stopTimer();
   hideActionButtons();
 
   const winnerIsPlayer = (folder === 'bot');
@@ -1012,7 +971,6 @@ function renderGameState() {
   updateCardDisplays();
   updateActionButtons();
   updateStreetLabel();
-  updateTimerDisplay();
   updateDealerChips();
   updateBetChips();
   updateHandNumber();
@@ -1182,23 +1140,6 @@ function updateStreetLabel() {
     HAND_END:        '—',
   };
   lbl.textContent = labels[gameState.phase] || gameState.phase;
-}
-
-function updateTimerDisplay() {
-  const bar   = document.getElementById('timer-bar');
-  const label = document.getElementById('timer-label');
-  if (!gameState.timerActive) {
-    bar.style.width  = '0%';
-    bar.className    = 'timer-bar';
-    label.textContent = '';
-    return;
-  }
-  const pct = (gameState.timerSeconds / TIMER_SECS) * 100;
-  bar.style.width   = `${pct}%`;
-  label.textContent = `${gameState.timerSeconds}s`;
-  bar.classList.remove('mid', 'low');
-  if (pct <= 30) bar.classList.add('low');
-  else if (pct <= 60) bar.classList.add('mid');
 }
 
 // ── Button visibility helpers ────────────────────────────────
