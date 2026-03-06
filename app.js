@@ -638,7 +638,7 @@ async function nextActorActs() {
 /** Determine valid actions for an actor given current bet state. */
 function getValidActions(who) {
   const myBet = who === 'player' ? gameState.playerBetThisStreet : gameState.botBetThisStreet;
-  if (gameState.streetBet > myBet + 0.001) {
+  if (!approxEq(gameState.streetBet, myBet) && gameState.streetBet > myBet) {
     return ['CALL', 'FOLD'];
   }
   return ['CHECK', 'BET'];

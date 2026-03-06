@@ -56,6 +56,7 @@ html, body {
 body {
   display: flex;
   flex-direction: column;
+  height: 100vh;              /* fallback for older browsers */
   height: 100dvh;             /* dynamic viewport for mobile browsers */
 }
 
