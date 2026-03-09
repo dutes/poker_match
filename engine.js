@@ -8,7 +8,7 @@ import { botChooseAction, botRedrawDecision } from './bot.js';
 import {
     renderGameState, hideLobby, hideAllModals, logEvent,
     showRedrawUI, getValidActions, showActionButtons, hideActionButtons,
-    showHandEndModal
+    showHandEndModal, cardElement
 } from './ui.js';
 
 export async function startNewMatch() {
@@ -74,9 +74,35 @@ export async function startHand() {
 
     renderGameState();
 
+    gameState.uiDealing = true;
     const drawnCards = await drawCards(4);
     gameState.playerHoleCards = drawnCards.slice(0, 2);
     gameState.botHoleCards = drawnCards.slice(2, 4);
+
+    const pContainer = document.getElementById('player-cards');
+    const bContainer = document.getElementById('bot-cards');
+    pContainer.innerHTML = '';
+    bContainer.innerHTML = '';
+
+    const p1 = cardElement(gameState.playerHoleCards[0], '', false, false); pContainer.appendChild(p1);
+    await delay(150);
+    const p2 = cardElement(gameState.playerHoleCards[1], '', false, false); pContainer.appendChild(p2);
+    await delay(150);
+
+    // Use card back styling for bot cards during deal
+    const botCardBackHTML = '<div class="card-back-side" style="position:relative;width:100%;height:100%;border-radius:var(--card-radius);"></div>';
+
+    const b1Outer = document.createElement('div'); b1Outer.className = 'card-container'; b1Outer.innerHTML = botCardBackHTML; bContainer.appendChild(b1Outer);
+    await delay(150);
+    const b2Outer = document.createElement('div'); b2Outer.className = 'card-container'; b2Outer.innerHTML = botCardBackHTML; bContainer.appendChild(b2Outer);
+    await delay(150);
+
+    p1.reveal();
+    await delay(150);
+    p2.reveal();
+    await delay(300);
+
+    gameState.uiDealing = false;
     renderGameState();
 
     gameState.phase = 'REDRAW';
@@ -235,16 +261,35 @@ async function advanceToNextStreet() {
 async function dealCommunity(n, dealPhase, bettingPhase, streetName) {
     gameState.phase = dealPhase;
     renderGameState();
-    await delay(300);
+    await delay(200);
 
+    gameState.uiDealing = true;
     const cards = await drawCards(n);
+    const oldLen = gameState.communityCards.length;
     gameState.communityCards.push(...cards);
 
     const names = cards.map(cardShortName).join(' ');
     logEvent(`${streetName}: ${names}`);
 
+    let revealDelay = 200;
+    if (n === 1 && oldLen === 3) revealDelay = 350; // Turn
+    if (n === 1 && oldLen === 4) revealDelay = 500; // River
+
+    for (let i = 0; i < n; i++) {
+        const slot = document.getElementById(`comm-${oldLen + i}`);
+        slot.className = '';
+        slot.innerHTML = '';
+        const cEl = cardElement(cards[i], '', false, false);
+        slot.appendChild(cEl);
+
+        await delay(50);
+        cEl.reveal();
+        await delay(revealDelay);
+    }
+
+    gameState.uiDealing = false;
     renderGameState();
-    await delay(400);
+    await delay(200);
     await startBettingRound(bettingPhase);
 }
 
@@ -264,6 +309,13 @@ async function endHandByFold(folder) {
     logEvent(winnerIsPlayer ? `You win $${potWon.toFixed(2)} (bot folded)` : `Bot wins $${potWon.toFixed(2)} (you folded)`, winnerIsPlayer ? 'log-win' : 'log-lose');
 
     renderGameState();
+    const potDisplay = document.getElementById('pot-display');
+    const animClass = winnerIsPlayer ? 'pot-win-player' : 'pot-win-bot';
+    potDisplay.classList.add(animClass);
+    await delay(700);
+    potDisplay.classList.remove(animClass);
+    await delay(300);
+
     await endHand(outcome, potWon, '(fold)', '(fold)');
 }
 
@@ -281,15 +333,18 @@ async function runShowdown() {
     logEvent(`You: ${playerResult.name}  |  Bot: ${botResult.name}`);
 
     let outcome, potChange;
+    let winningCards = [];
     if (playerResult.rank > botResult.rank) {
         outcome = 'win';
         potChange = gameState.pot;
         gameState.playerStack = r2(gameState.playerStack + gameState.pot);
+        winningCards = playerResult.cards;
         logEvent(`🏆 You win! ${playerResult.name} beats ${botResult.name}`, 'log-win');
     } else if (botResult.rank > playerResult.rank) {
         outcome = 'lose';
         potChange = -gameState.pot;
         gameState.botStack = r2(gameState.botStack + gameState.pot);
+        winningCards = botResult.cards;
         logEvent(`Bot wins. ${botResult.name} beats ${playerResult.name}`, 'log-lose');
     } else {
         outcome = 'tie';
@@ -301,6 +356,26 @@ async function runShowdown() {
     }
 
     renderGameState();
+
+    if (winningCards && winningCards.length > 0) {
+        const winningNames = winningCards.map(c => cardShortName(c));
+        document.querySelectorAll('.card-container').forEach(el => {
+            const img = el.querySelector('img');
+            if (img && winningNames.includes(img.alt)) {
+                el.classList.add('winning-card');
+            }
+        });
+
+        const potDisplay = document.getElementById('pot-display');
+        const animClass = outcome === 'win' ? 'pot-win-player' : 'pot-win-bot';
+        potDisplay.classList.add(animClass);
+        await delay(700);
+        potDisplay.classList.remove(animClass);
+        await delay(1000);
+    } else {
+        await delay(1500);
+    }
+
     await endHand(outcome, potChange, playerResult.name, botResult.name);
 }
 
@@ -323,6 +398,15 @@ async function endHand(outcome, potChange, playerHandName, botHandName) {
     gameState.dealerIsPlayer = !gameState.dealerIsPlayer;
 
     renderGameState();
+
+    const playerScores = document.getElementById('player-points');
+    const botScores = document.getElementById('bot-points');
+    if (outcome === 'win' || outcome === 'tie') playerScores.classList.add('score-pulse');
+    if (outcome === 'lose' || outcome === 'tie') botScores.classList.add('score-pulse');
+    setTimeout(() => {
+        playerScores.classList.remove('score-pulse');
+        botScores.classList.remove('score-pulse');
+    }, 700);
 
     const matchOver = gameState.playerPoints >= gameState.matchPointsNeeded ||
         gameState.botPoints >= gameState.matchPointsNeeded;

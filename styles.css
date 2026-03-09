@@ -383,29 +383,162 @@ body {
   color: rgba(255, 255, 255, 0.12);
 }
 
-/* Card image wrapper */
-.card-img-wrap {
+/* 3D Card flips */
+.card-container {
   aspect-ratio: 2.5 / 3.5;
   height: var(--card-h-mobile);
   width: auto;
-  overflow: hidden;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.55);
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
-  background: var(--card-bg);
-  transition: transform 0.2s, box-shadow 0.2s;
+  perspective: 1000px;
+  flex-shrink: 0;
+  transform: translateY(0);
+  /* Used for slide-in if needed */
+  transition: transform 0.3s ease;
 }
 
-.card-img-wrap img {
+.card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform-style: preserve-3d;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.55);
+  border-radius: var(--card-radius);
+  transform: rotateY(180deg);
+  /* face down by default */
+}
+
+.card-inner.revealed {
+  transform: rotateY(0deg);
+  /* face up */
+}
+
+/* For cards that are always face up instantly (like Redraw UI) */
+.card-inner.instant-reveal {
+  transition: none;
+  transform: rotateY(0deg);
+}
+
+.card-front,
+.card-back-side {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+}
+
+.card-front {
+  background: var(--card-bg);
+}
+
+.card-front img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
+.card-back-side {
+  background: repeating-linear-gradient(45deg, var(--card-back-pat) 0px, var(--card-back-pat) 4px, var(--card-back-bg) 4px, var(--card-back-bg) 8px);
+  border: 2px solid #4a6fa5;
+  transform: rotateY(180deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-back-side::after {
+  content: '♠';
+  font-size: 1.4rem;
+  color: rgba(255, 255, 255, 0.12);
+}
+
 /* Winner card highlight */
-.card-img-wrap.winner-card {
-  box-shadow: 0 0 0 2.5px var(--chip-gold), 0 4px 14px rgba(245, 158, 11, 0.6);
-  transform: translateY(-3px);
+.winning-card .card-inner {
+  box-shadow: 0 0 12px var(--chip-gold), 0 4px 14px rgba(245, 158, 11, 0.8);
+}
+
+.winning-card {
+  transform: scale(1.08) translateY(-4px);
+  z-index: 10;
+}
+
+/* Chip / Score Animations */
+@keyframes potToPlayer {
+  40% {
+    transform: translateY(30px) scale(1.1);
+    background: rgba(245, 158, 11, 0.2);
+    border-color: var(--chip-gold);
+  }
+
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes potToBot {
+  40% {
+    transform: translateY(-30px) scale(1.1);
+    background: rgba(245, 158, 11, 0.2);
+    border-color: var(--chip-gold);
+  }
+
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.pot-win-player {
+  animation: potToPlayer 0.7s ease;
+}
+
+.pot-win-bot {
+  animation: potToBot 0.7s ease;
+}
+
+@keyframes scorePulse {
+  0% {
+    transform: scale(1);
+    color: inherit;
+  }
+
+  50% {
+    transform: scale(1.3);
+    color: var(--chip-gold);
+    text-shadow: 0 0 8px var(--chip-gold);
+  }
+
+  100% {
+    transform: scale(1);
+    color: inherit;
+  }
+}
+
+.score-pulse {
+  animation: scorePulse 0.6s ease;
+  display: inline-block;
+}
+
+/* Modal text fade */
+@keyframes fadeInSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-outcome,
+.modal-hand-name {
+  animation: fadeInSlideUp 0.4s ease-out backwards;
 }
 
 /* Pick-2 selectable card */
@@ -492,6 +625,30 @@ body {
 .action-btn:active {
   transform: scale(0.96);
   filter: brightness(0.88);
+}
+
+.action-btn:hover {
+  transform: scale(1.03);
+  filter: brightness(1.1);
+}
+
+.hand-strength-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--chip-gold);
+  background: rgba(0, 0, 0, 0.5);
+  padding: 4px 10px;
+  border-radius: 12px;
+  margin-top: -10px;
+  margin-bottom: 6px;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  text-align: center;
+}
+
+.hand-strength-label.hidden {
+  display: none;
 }
 
 .action-btn:disabled {

@@ -2,18 +2,23 @@
 'use strict';
 
 import { gameState, r2, approxEq } from './state.js';
-import { cardShortName } from './evaluator.js';
+import { cardShortName, evaluateHand } from './evaluator.js';
 import { startHand, startBettingRound } from './engine.js';
 
-export function cardElement(card, extraClass = '') {
+export function cardElement(card, extraClass = '', revealed = true, instant = true) {
     const wrap = document.createElement('div');
-    wrap.className = `card-img-wrap${extraClass ? ' ' + extraClass : ''}`;
-    const img = document.createElement('img');
-    img.src = card.image;
-    img.alt = cardShortName(card);
-    img.loading = 'lazy';
-    img.onerror = () => { wrap.textContent = cardShortName(card); wrap.style.cssText = 'display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;'; };
-    wrap.appendChild(img);
+    wrap.className = `card-container${extraClass ? ' ' + extraClass : ''}`;
+    wrap.innerHTML = `
+      <div class="card-inner${revealed ? ' revealed' : ''}${instant && revealed ? ' instant-reveal' : ''}">
+        <div class="card-front"><img src="${card.image}" alt="${cardShortName(card)}" loading="lazy"></div>
+        <div class="card-back-side"></div>
+      </div>
+    `;
+    wrap.querySelector('img').onerror = function () {
+        this.parentElement.textContent = cardShortName(card);
+        this.parentElement.style.cssText = 'display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:#000;background:#fff';
+    };
+    wrap.reveal = () => wrap.querySelector('.card-inner').classList.add('revealed');
     return wrap;
 }
 
@@ -217,6 +222,7 @@ function updateBetChips() {
 }
 
 function updateCardDisplays() {
+    if (gameState.uiDealing) return;
     const botCardArea = document.getElementById('bot-cards');
     if (gameState.phase === 'SHOWDOWN' || gameState.phase === 'HAND_END') {
         botCardArea.innerHTML = '';
@@ -268,6 +274,20 @@ function updateCardDisplays() {
     if (gameState.phase === 'HAND_END' || gameState.phase === 'SHOWDOWN') {
         if (gameState.lastHandResult === 'win') pZone.classList.add('winner');
         if (gameState.lastHandResult === 'lose') pZone.classList.add('loser');
+    }
+
+    const strengthLabel = document.getElementById('player-hand-strength');
+    if (gameState.phase.indexOf('BETTING') !== -1 || gameState.phase.startsWith('DEAL_') || gameState.phase === 'SHOWDOWN') {
+        const cards = [...gameState.playerHoleCards, ...gameState.communityCards];
+        if (cards.length >= 2) {
+            const res = evaluateHand(cards);
+            strengthLabel.textContent = `Hand: ${res.name}`;
+            strengthLabel.classList.remove('hidden');
+        } else {
+            strengthLabel.classList.add('hidden');
+        }
+    } else {
+        strengthLabel.classList.add('hidden');
     }
 }
 
