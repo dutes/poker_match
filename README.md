@@ -1,6 +1,6 @@
-# Poker Duel
+# Poker Match
 
-Poker Duel is a fast, casual heads-up poker prototype designed for short, best-of-3 matches. Built with vanilla HTML, CSS, and JavaScript, the project focuses on visual polish, crisp animations, and a satisfying user experience—all without the need for complex frontend frameworks.
+Poker Match is a fast, casual heads-up poker prototype designed for short, best-of-3 matches. Built with vanilla HTML, CSS, and JavaScript, the project focuses on visual polish, crisp animations, and a satisfying user experience—all without the need for complex frontend frameworks.
 
 ## Game Concept
 
@@ -10,7 +10,7 @@ Each hand follows a streamlined flow:
 **Deal → Redraw Phase → Play Phase → Result → Match Score Update**
 
 ### Key Mechanic: The Redraw Phase
-The standout feature of Poker Duel is the **Redraw Phase**. After the initial deal of two hole cards, each player has the opportunity to swap exactly one card before the traditional pre-flop betting phase begins. This adds a layer of strategy and excitement to every hand.
+The standout feature of Poker Match is the **Redraw Phase**. After the initial deal of two hole cards, each player has the opportunity to swap exactly one card before the traditional pre-flop betting phase begins. This adds a layer of strategy and excitement to every hand.
 
 ## Features & Visual Polish
 - **Satisfying Animations**: Cards are dealt sequentially with 3D flip effects. Community cards are revealed rhythmically to build suspense.

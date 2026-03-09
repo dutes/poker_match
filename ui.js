@@ -41,13 +41,7 @@ export function showRedrawUI() {
     container.innerHTML = '';
 
     gameState.playerHoleCards.forEach((card, i) => {
-        const el = document.createElement('div');
-        el.className = 'pick2-card';
-        const img = document.createElement('img');
-        img.src = card.image;
-        img.alt = cardShortName(card);
-        img.onerror = () => { el.textContent = cardShortName(card); };
-        el.appendChild(img);
+        const el = cardElement(card, 'selectable', true, true);
         el.addEventListener('click', () => redrawCardClick(i));
         el.dataset.index = i;
         container.appendChild(el);
@@ -64,7 +58,7 @@ export function redrawCardClick(idx) {
     } else {
         gameState.playerSwappedCardIndex = idx;
     }
-    document.querySelectorAll('#redraw-cards .pick2-card').forEach((el, i) => {
+    document.querySelectorAll('#redraw-cards .card-container').forEach((el, i) => {
         el.classList.toggle('selected', gameState.playerSwappedCardIndex === i);
     });
     document.getElementById('btn-swap-card').disabled = gameState.playerSwappedCardIndex === -1;
@@ -338,19 +332,21 @@ function updateActionButtons() {
 }
 
 function updateStreetLabel() {
-    const lbl = document.getElementById('street-label');
+    const lbl = document.getElementById('phase-badge');
+    if (!lbl) return;
     const labels = {
-        LOBBY: '— Waiting to Start —',
-        HAND_INIT: '● Dealing…',
-        PREFLOP_BETTING: '● Pre-Flop',
-        DEAL_FLOP: '● Dealing Flop…',
-        FLOP_BETTING: '● Flop',
-        DEAL_TURN: '● Dealing Turn…',
-        TURN_BETTING: '● Turn',
-        DEAL_RIVER: '● Dealing River…',
-        RIVER_BETTING: '● River',
-        SHOWDOWN: '★ Showdown',
-        HAND_END: '—',
+        LOBBY: 'WAITING TO START',
+        HAND_INIT: 'DEALING',
+        REDRAW: 'REDRAW PHASE',
+        PREFLOP_BETTING: 'PRE-FLOP',
+        DEAL_FLOP: 'DEALING FLOP',
+        FLOP_BETTING: 'THE FLOP',
+        DEAL_TURN: 'DEALING TURN',
+        TURN_BETTING: 'THE TURN',
+        DEAL_RIVER: 'DEALING RIVER',
+        RIVER_BETTING: 'THE RIVER',
+        SHOWDOWN: 'SHOWDOWN',
+        HAND_END: 'HAND COMPLETE',
     };
-    lbl.textContent = labels[gameState.phase] || gameState.phase;
+    lbl.textContent = `[ ${labels[gameState.phase] || gameState.phase} ]`;
 }

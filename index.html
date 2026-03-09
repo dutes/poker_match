@@ -1,5 +1,5 @@
 <!--
-  ♠ Poker Duel — Heads-Up Texas Hold'em (mobile-first)
+  ♠ Poker Match — Heads-Up Texas Hold'em (mobile-first)
   =====================================================
   HOW TO RUN:
     Local:  Open index.html directly in any modern browser (Chrome, Firefox, Safari).
@@ -16,7 +16,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#1a472a" />
-  <title>♠ Poker Duel</title>
+  <title>♠ Poker Match</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 
@@ -35,130 +35,138 @@
       aria-label="Dismiss">✕</button>
   </div>
 
-  <!-- ── Header ──────────────────────────────────────────────────── -->
-  <header class="game-header">
-    <div class="header-row header-row-top">
-      <h1 class="game-title">♠ Poker Duel</h1>
-    </div>
-    <div class="header-row header-row-info">
-      <span class="match-score">
-        Match Score | You: <span id="player-points">0</span> | Opponent: <span id="bot-points">0</span>
-      </span>
-      <span id="hand-number" class="info-chip">Hand #0</span>
-      <span id="pot-display" class="info-chip">Pot: $0.00</span>
-    </div>
-  </header>
+  <!-- ── Game shell ────────────────────────────────────────────────── -->
+  <div class="game-shell">
 
-  <!-- ── Game table ──────────────────────────────────────────────── -->
-  <main class="game-table" id="game-table">
-
-    <!-- Bot section -->
-    <section class="player-zone bot-zone" id="bot-zone">
-      <div class="zone-meta">
-        <span class="dealer-chip" id="bot-dealer-chip">D</span>
-        <span class="stack-label">Bot: $<span id="bot-stack">10.00</span></span>
-        <span class="street-bet-chip hidden" id="bot-bet-chip">$0.00</span>
-      </div>
-      <div id="bot-cards" class="card-row bot-card-row">
-        <div class="card-back" id="bot-card-0"></div>
-        <div class="card-back" id="bot-card-1"></div>
-      </div>
-    </section>
-
-    <!-- Community cards -->
-    <section class="community-zone" id="community-zone">
-      <div id="street-label" class="street-label">— Waiting to Start —</div>
-      <div id="community-cards" class="community-row">
-        <div class="card-slot" id="comm-0"></div>
-        <div class="card-slot" id="comm-1"></div>
-        <div class="card-slot" id="comm-2"></div>
-        <div class="card-slot" id="comm-3"></div>
-        <div class="card-slot" id="comm-4"></div>
-      </div>
-    </section>
-
-    <!-- Player section -->
-    <section class="player-zone player-zone-self" id="player-zone">
-      <div id="player-cards" class="card-row player-card-row">
-        <div class="card-slot" id="player-card-0"></div>
-        <div class="card-slot" id="player-card-1"></div>
-      </div>
-      <div id="player-hand-strength" class="hand-strength-label hidden"></div>
-      <div class="zone-meta">
-        <span class="dealer-chip" id="player-dealer-chip">D</span>
-        <span class="stack-label">You: $<span id="player-stack">10.00</span></span>
-        <span class="street-bet-chip hidden" id="player-bet-chip">$0.00</span>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- ── Redraw Phase overlay ────────────────────────────────────── -->
-  <div id="redraw-overlay" class="pick2-overlay hidden" role="dialog" aria-modal="true" aria-label="Redraw Phase">
-    <div class="pick2-container">
-      <h2 class="pick2-title">Redraw Phase</h2>
-      <p class="pick2-count">You may replace ONE card.</p>
-      <div id="redraw-cards" class="pick2-cards"></div>
-      <div class="redraw-actions">
-        <button id="btn-keep-hand" class="btn-pick2-confirm" onclick="confirmRedraw(-1)">Keep Hand</button>
-        <button id="btn-swap-card" class="btn-pick2-confirm" disabled onclick="confirmRedrawCard()">Swap Card</button>
+    <!-- Match Bar -->
+    <div class="match-bar">
+      <div class="match-title">♠ Poker Match</div>
+      <div class="match-format">Best of 3</div>
+      <div class="match-score">
+        You <span id="player-points">0</span> – <span id="bot-points">0</span> Opponent
       </div>
     </div>
-  </div>
 
-  <!-- ── Action area ─────────────────────────────────────────────── -->
-  <div class="action-area" id="action-area">
-
-    <!-- Betting buttons (hidden when not player's turn) -->
-    <div id="action-buttons" class="action-buttons hidden">
-      <button id="btn-check" class="action-btn btn-check" onclick="handlePlayerAction('CHECK')">CHECK</button>
-      <button id="btn-bet" class="action-btn btn-bet" onclick="handlePlayerAction('BET')">
-        BET<small id="bet-amount-label" class="btn-sub-label"></small>
-      </button>
-      <button id="btn-call" class="action-btn btn-call" onclick="handlePlayerAction('CALL')">
-        CALL<small id="call-amount-label" class="btn-sub-label"></small>
-      </button>
-      <button id="btn-fold" class="action-btn btn-fold" onclick="handlePlayerAction('FOLD')">FOLD</button>
+    <!-- Phase Badge -->
+    <div class="phase-row">
+      <div id="phase-badge" class="phase-badge">[ CONNECTING ]</div>
     </div>
 
-    <!-- Lobby / new-match button -->
-    <div id="lobby-area" class="lobby-area">
-      <button id="btn-new-match" class="btn-new-match" onclick="startNewMatch()">▶ New Match</button>
-    </div>
+    <!-- ── Game table ──────────────────────────────────────────────── -->
+    <div class="table-area">
+      <main class="game-table" id="game-table">
 
-  </div>
+        <!-- Bot section -->
+        <section class="player-zone bot-zone" id="bot-zone">
+          <div class="zone-meta">
+            <span class="dealer-chip" id="bot-dealer-chip">D</span>
+            <span class="stack-label">Bot: $<span id="bot-stack">10.00</span></span>
+            <span class="street-bet-chip hidden" id="bot-bet-chip">$0.00</span>
+          </div>
+          <div id="bot-cards" class="card-row bot-card-row">
+            <div class="card-back" id="bot-card-0"></div>
+            <div class="card-back" id="bot-card-1"></div>
+          </div>
+        </section>
 
-  <!-- ── Event log ───────────────────────────────────────────────── -->
-  <div class="event-log-wrapper">
-    <button id="event-log-toggle" class="event-log-toggle" onclick="toggleEventLog()" aria-expanded="false">
-      ▼ Event Log
-    </button>
-    <div id="event-log" class="event-log" aria-live="polite"></div>
-  </div>
+        <!-- Community cards -->
+        <section class="community-zone" id="community-zone">
+          <div id="street-label" class="street-label">— Waiting to Start —</div>
+          <div id="community-cards" class="community-row">
+            <div class="card-slot" id="comm-0"></div>
+            <div class="card-slot" id="comm-1"></div>
+            <div class="card-slot" id="comm-2"></div>
+            <div class="card-slot" id="comm-3"></div>
+            <div class="card-slot" id="comm-4"></div>
+          </div>
+          <div class="pot-area">
+            <span id="hand-number" class="info-chip">Hand #0</span>
+            <span id="pot-display" class="info-chip">Pot: $0.00</span>
+          </div>
+        </section>
 
-  <!-- ── Hand-end modal ──────────────────────────────────────────── -->
-  <div id="hand-end-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Hand result">
-    <div class="modal-card" id="hand-modal-card">
-      <div id="modal-outcome" class="modal-outcome"></div>
-      <div class="modal-hands">
-        <span id="modal-hand-summary" class="modal-hand-name"></span>
+        <!-- Player section -->
+        <section class="player-zone player-zone-self" id="player-zone">
+          <div id="player-cards" class="card-row player-card-row">
+            <div class="card-slot" id="player-card-0"></div>
+            <div class="card-slot" id="player-card-1"></div>
+          </div>
+          <div id="player-hand-strength" class="hand-strength-label hidden"></div>
+          <div class="zone-meta">
+            <span class="dealer-chip" id="player-dealer-chip">D</span>
+            <span class="stack-label">You: $<span id="player-stack">10.00</span></span>
+            <span class="street-bet-chip hidden" id="player-bet-chip">$0.00</span>
+          </div>
+        </section>
+
+      </main>
+
+      <!-- ── Redraw Phase overlay ────────────────────────────────────── -->
+      <div id="redraw-overlay" class="pick2-overlay hidden" role="dialog" aria-modal="true" aria-label="Redraw Phase">
+        <div class="pick2-container">
+          <h2 class="pick2-title">Redraw Phase</h2>
+          <p class="pick2-count">You may replace ONE card.</p>
+          <div id="redraw-cards" class="pick2-cards"></div>
+          <div class="redraw-actions">
+            <button id="btn-keep-hand" class="btn-pick2-confirm" onclick="confirmRedraw(-1)">Keep Hand</button>
+            <button id="btn-swap-card" class="btn-pick2-confirm" disabled onclick="confirmRedrawCard()">Swap
+              Card</button>
+          </div>
+        </div>
       </div>
-      <p id="modal-pot-change" class="modal-stat"></p>
-      <p id="modal-points-change" class="modal-stat"></p>
-      <button id="btn-continue" class="btn-continue" onclick="closeHandModal()">Continue →</button>
-    </div>
-  </div>
 
-  <!-- ── Match-over modal ────────────────────────────────────────── -->
-  <div id="match-over-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Match over">
-    <div class="modal-card">
-      <div id="match-outcome" class="modal-outcome"></div>
-      <p id="match-summary" class="modal-stat"></p>
-      <button class="btn-new-match" onclick="resetForNewMatch()">Play Again</button>
-    </div>
-  </div>
+      <!-- ── Action area ─────────────────────────────────────────────── -->
+      <div class="action-area" id="action-area">
 
-  <script type="module" src="app.js"></script>
+        <!-- Betting buttons (hidden when not player's turn) -->
+        <div id="action-buttons" class="action-buttons hidden">
+          <button id="btn-check" class="action-btn btn-check" onclick="handlePlayerAction('CHECK')">CHECK</button>
+          <button id="btn-bet" class="action-btn btn-bet" onclick="handlePlayerAction('BET')">
+            BET<small id="bet-amount-label" class="btn-sub-label"></small>
+          </button>
+          <button id="btn-call" class="action-btn btn-call" onclick="handlePlayerAction('CALL')">
+            CALL<small id="call-amount-label" class="btn-sub-label"></small>
+          </button>
+          <button id="btn-fold" class="action-btn btn-fold" onclick="handlePlayerAction('FOLD')">FOLD</button>
+        </div>
+
+        <!-- Lobby / new-match button -->
+        <div id="lobby-area" class="lobby-area">
+          <button id="btn-new-match" class="btn-new-match" onclick="startNewMatch()">▶ New Match</button>
+        </div>
+      </div> <!-- /game-shell -->
+
+      <!-- ── Event log ───────────────────────────────────────────────── -->
+      <div class="event-log-wrapper">
+        <button id="event-log-toggle" class="event-log-toggle" onclick="toggleEventLog()" aria-expanded="false">
+          ▼ Event Log
+        </button>
+        <div id="event-log" class="event-log" aria-live="polite"></div>
+      </div>
+
+      <!-- ── Hand-end modal ──────────────────────────────────────────── -->
+      <div id="hand-end-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Hand result">
+        <div class="modal-card" id="hand-modal-card">
+          <div id="modal-outcome" class="modal-outcome"></div>
+          <div class="modal-hands">
+            <span id="modal-hand-summary" class="modal-hand-name"></span>
+          </div>
+          <p id="modal-pot-change" class="modal-stat"></p>
+          <p id="modal-points-change" class="modal-stat"></p>
+          <button id="btn-continue" class="btn-continue" onclick="closeHandModal()">Continue →</button>
+        </div>
+      </div>
+
+      <!-- ── Match-over modal ────────────────────────────────────────── -->
+      <div id="match-over-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Match over">
+        <div class="modal-card">
+          <div id="match-outcome" class="modal-outcome"></div>
+          <p id="match-summary" class="modal-stat"></p>
+          <button class="btn-new-match" onclick="resetForNewMatch()">Play Again</button>
+        </div>
+      </div>
+
+      <script type="module" src="app.js"></script>
 </body>
 
 </html>
