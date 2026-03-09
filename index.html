@@ -11,6 +11,7 @@
 -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -18,6 +19,7 @@
   <title>♠ Poker Duel</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
 
   <!-- ── Loading overlay ─────────────────────────────────────────── -->
@@ -29,32 +31,21 @@
   <!-- ── API warning banner ──────────────────────────────────────── -->
   <div id="api-warning" class="api-warning hidden" role="alert">
     <span>⚠️ Card API unavailable — created a new local deck</span>
-    <button class="api-warning-close" onclick="this.parentElement.classList.add('hidden')" aria-label="Dismiss">✕</button>
+    <button class="api-warning-close" onclick="this.parentElement.classList.add('hidden')"
+      aria-label="Dismiss">✕</button>
   </div>
 
   <!-- ── Header ──────────────────────────────────────────────────── -->
   <header class="game-header">
     <div class="header-row header-row-top">
       <h1 class="game-title">♠ Poker Duel</h1>
-      <div class="header-toggles">
-        <!-- Variant toggle -->
-        <div id="variant-toggle" class="toggle-group" role="group" aria-label="Variant">
-          <button id="variant-normal" class="toggle-btn active" data-variant="NORMAL">2-card</button>
-          <button id="variant-pick2" class="toggle-btn"        data-variant="PICK2">Pick-2</button>
-        </div>
-        <!-- Match length toggle -->
-        <div id="match-toggle" class="toggle-group" role="group" aria-label="Match length">
-          <button id="match-bo3" class="toggle-btn active" data-length="BO3">Bo3</button>
-          <button id="match-bo5" class="toggle-btn"        data-length="BO5">Bo5</button>
-        </div>
-      </div>
     </div>
     <div class="header-row header-row-info">
       <span class="match-score">
-        You&nbsp;<span id="player-points">0</span>&nbsp;–&nbsp;<span id="bot-points">0</span>&nbsp;Bot
+        Match Score | You: <span id="player-points">0</span> | Opponent: <span id="bot-points">0</span>
       </span>
-      <span id="hand-number"  class="info-chip">Hand #0</span>
-      <span id="pot-display"  class="info-chip">Pot: $0.00</span>
+      <span id="hand-number" class="info-chip">Hand #0</span>
+      <span id="pot-display" class="info-chip">Pot: $0.00</span>
     </div>
   </header>
 
@@ -101,15 +92,16 @@
 
   </main>
 
-  <!-- ── Pick-2 selection overlay ────────────────────────────────── -->
-  <div id="pick2-overlay" class="pick2-overlay hidden" role="dialog" aria-modal="true" aria-label="Pick 2 cards">
+  <!-- ── Redraw Phase overlay ────────────────────────────────────── -->
+  <div id="redraw-overlay" class="pick2-overlay hidden" role="dialog" aria-modal="true" aria-label="Redraw Phase">
     <div class="pick2-container">
-      <h2 class="pick2-title">Choose Your Hand</h2>
-      <p id="pick2-count" class="pick2-count">Select 2 cards (0 / 2)</p>
-      <div id="pick2-cards" class="pick2-cards"></div>
-      <button id="btn-pick2-confirm" class="btn-pick2-confirm" disabled onclick="confirmPick2()">
-        Confirm Selection
-      </button>
+      <h2 class="pick2-title">Redraw Phase</h2>
+      <p class="pick2-count">You may replace ONE card.</p>
+      <div id="redraw-cards" class="pick2-cards"></div>
+      <div class="redraw-actions">
+        <button id="btn-keep-hand" class="btn-pick2-confirm" onclick="confirmRedraw(-1)">Keep Hand</button>
+        <button id="btn-swap-card" class="btn-pick2-confirm" disabled onclick="confirmRedrawCard()">Swap Card</button>
+      </div>
     </div>
   </div>
 
@@ -119,13 +111,13 @@
     <!-- Betting buttons (hidden when not player's turn) -->
     <div id="action-buttons" class="action-buttons hidden">
       <button id="btn-check" class="action-btn btn-check" onclick="handlePlayerAction('CHECK')">CHECK</button>
-      <button id="btn-bet"   class="action-btn btn-bet"   onclick="handlePlayerAction('BET')">
+      <button id="btn-bet" class="action-btn btn-bet" onclick="handlePlayerAction('BET')">
         BET<small id="bet-amount-label" class="btn-sub-label"></small>
       </button>
-      <button id="btn-call"  class="action-btn btn-call"  onclick="handlePlayerAction('CALL')">
+      <button id="btn-call" class="action-btn btn-call" onclick="handlePlayerAction('CALL')">
         CALL<small id="call-amount-label" class="btn-sub-label"></small>
       </button>
-      <button id="btn-fold"  class="action-btn btn-fold"  onclick="handlePlayerAction('FOLD')">FOLD</button>
+      <button id="btn-fold" class="action-btn btn-fold" onclick="handlePlayerAction('FOLD')">FOLD</button>
     </div>
 
     <!-- Lobby / new-match button -->
@@ -146,18 +138,11 @@
   <!-- ── Hand-end modal ──────────────────────────────────────────── -->
   <div id="hand-end-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Hand result">
     <div class="modal-card" id="hand-modal-card">
-      <div id="modal-outcome"      class="modal-outcome"></div>
+      <div id="modal-outcome" class="modal-outcome"></div>
       <div class="modal-hands">
-        <div class="modal-hand-row">
-          <span class="modal-hand-label">Your hand:</span>
-          <span id="modal-player-hand" class="modal-hand-name"></span>
-        </div>
-        <div class="modal-hand-row">
-          <span class="modal-hand-label">Bot hand:</span>
-          <span id="modal-bot-hand"   class="modal-hand-name"></span>
-        </div>
+        <span id="modal-hand-summary" class="modal-hand-name"></span>
       </div>
-      <p id="modal-pot-change"    class="modal-stat"></p>
+      <p id="modal-pot-change" class="modal-stat"></p>
       <p id="modal-points-change" class="modal-stat"></p>
       <button id="btn-continue" class="btn-continue" onclick="closeHandModal()">Continue →</button>
     </div>
@@ -166,12 +151,13 @@
   <!-- ── Match-over modal ────────────────────────────────────────── -->
   <div id="match-over-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Match over">
     <div class="modal-card">
-      <div id="match-outcome"  class="modal-outcome"></div>
-      <p   id="match-summary"  class="modal-stat"></p>
+      <div id="match-outcome" class="modal-outcome"></div>
+      <p id="match-summary" class="modal-stat"></p>
       <button class="btn-new-match" onclick="resetForNewMatch()">Play Again</button>
     </div>
   </div>
 
   <script type="module" src="app.js"></script>
 </body>
+
 </html>

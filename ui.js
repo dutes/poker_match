@@ -30,12 +30,12 @@ export function showActionButtons() { document.getElementById('action-buttons').
 export function hideActionButtons() { document.getElementById('action-buttons').classList.add('hidden'); }
 export function hideLobby() { document.getElementById('lobby-area').classList.add('hidden'); }
 
-export function showPick2UI(cards4, onConfirmCb) {
-    gameState.pick2Selected = [];
-    const container = document.getElementById('pick2-cards');
+export function showRedrawUI() {
+    gameState.playerSwappedCardIndex = -1;
+    const container = document.getElementById('redraw-cards');
     container.innerHTML = '';
 
-    cards4.forEach((card, i) => {
+    gameState.playerHoleCards.forEach((card, i) => {
         const el = document.createElement('div');
         el.className = 'pick2-card';
         const img = document.createElement('img');
@@ -43,62 +43,56 @@ export function showPick2UI(cards4, onConfirmCb) {
         img.alt = cardShortName(card);
         img.onerror = () => { el.textContent = cardShortName(card); };
         el.appendChild(img);
-        el.addEventListener('click', () => pick2CardClick(i));
+        el.addEventListener('click', () => redrawCardClick(i));
         el.dataset.index = i;
         container.appendChild(el);
     });
 
-    updatePick2Count();
-    document.getElementById('pick2-overlay').classList.remove('hidden');
+    document.getElementById('btn-swap-card').disabled = true;
+    document.getElementById('redraw-overlay').classList.remove('hidden');
     document.getElementById('lobby-area').classList.add('hidden');
 }
 
-export function pick2CardClick(idx) {
-    const sel = gameState.pick2Selected;
-    const pos = sel.indexOf(idx);
-    if (pos === -1) {
-        if (sel.length < 2) sel.push(idx);
+export function redrawCardClick(idx) {
+    if (gameState.playerSwappedCardIndex === idx) {
+        gameState.playerSwappedCardIndex = -1;
     } else {
-        sel.splice(pos, 1);
+        gameState.playerSwappedCardIndex = idx;
     }
-    document.querySelectorAll('.pick2-card').forEach((el, i) => {
-        el.classList.toggle('selected', sel.includes(i));
+    document.querySelectorAll('#redraw-cards .pick2-card').forEach((el, i) => {
+        el.classList.toggle('selected', gameState.playerSwappedCardIndex === i);
     });
-    updatePick2Count();
-    document.getElementById('btn-pick2-confirm').disabled = sel.length !== 2;
+    document.getElementById('btn-swap-card').disabled = gameState.playerSwappedCardIndex === -1;
 }
 
-export function confirmPick2() {
-    if (gameState.pick2Selected.length !== 2) return;
-    const cards4 = gameState.playerPickCards;
-    gameState.playerHoleCards = gameState.pick2Selected.map(i => cards4[i]);
-
-    document.querySelectorAll('.pick2-card').forEach((el, i) => {
-        if (!gameState.pick2Selected.includes(i)) el.classList.add('discarded');
-    });
-
-    setTimeout(async () => {
-        document.getElementById('pick2-overlay').classList.add('hidden');
-        renderGameState();
-        await startBettingRound('PREFLOP_BETTING');
-    }, 350);
+export async function confirmRedrawCard() {
+    if (gameState.playerSwappedCardIndex === -1) return;
+    await confirmRedraw(gameState.playerSwappedCardIndex);
 }
 
-function updatePick2Count() {
-    const n = gameState.pick2Selected.length;
-    document.getElementById('pick2-count').textContent = `Select 2 cards (${n} / 2 selected)`;
+export async function confirmRedraw(swapIndex) {
+    document.getElementById('redraw-overlay').classList.add('hidden');
+    const { handleRedrawPhase } = await import('./engine.js');
+    await handleRedrawPhase(swapIndex);
 }
 
 export async function showHandEndModal({ outcome, playerHandName, botHandName, potChange, ptsText, matchOver }) {
     const modal = document.getElementById('hand-end-modal');
     const outcomeEl = document.getElementById('modal-outcome');
 
-    const label = outcome === 'win' ? '🏆 You Win!' : outcome === 'lose' ? '💀 You Lose' : '🤝 Tie';
-    outcomeEl.textContent = label;
-    outcomeEl.className = `modal-outcome ${outcome}`;
-
-    document.getElementById('modal-player-hand').textContent = playerHandName;
-    document.getElementById('modal-bot-hand').textContent = botHandName;
+    if (outcome === 'win') {
+        outcomeEl.textContent = '🏆 You Win!';
+        outcomeEl.className = 'modal-outcome win';
+        document.getElementById('modal-hand-summary').textContent = `${playerHandName} beats ${botHandName}`;
+    } else if (outcome === 'lose') {
+        outcomeEl.textContent = '💀 You Lose';
+        outcomeEl.className = 'modal-outcome lose';
+        document.getElementById('modal-hand-summary').textContent = `${botHandName} beats ${playerHandName}`;
+    } else {
+        outcomeEl.textContent = '🤝 Tie';
+        outcomeEl.className = 'modal-outcome tie';
+        document.getElementById('modal-hand-summary').textContent = `Both have ${playerHandName}`;
+    }
 
     const chipSign = potChange > 0 ? '+' : '';
     document.getElementById('modal-pot-change').innerHTML =

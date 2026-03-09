@@ -4,10 +4,10 @@
 import { gameState, r2, approxEq, delay } from './state.js';
 import { getNewDeck, rebuildLocalDeck, drawCards } from './api.js';
 import { evaluateHand, cardShortName } from './evaluator.js';
-import { botChooseAction, botPick2 } from './bot.js';
+import { botChooseAction, botRedrawDecision } from './bot.js';
 import {
     renderGameState, hideLobby, hideAllModals, logEvent,
-    showPick2UI, getValidActions, showActionButtons, hideActionButtons,
+    showRedrawUI, getValidActions, showActionButtons, hideActionButtons,
     showHandEndModal
 } from './ui.js';
 
@@ -23,15 +23,10 @@ export async function startNewMatch() {
         communityCards: [],
         playerHoleCards: [],
         botHoleCards: [],
-        playerPickCards: [],
-        botPickCards: [],
         dealerIsPlayer: Math.random() < 0.5,
         matchOver: false,
         lastHandResult: null,
     });
-
-    applyVariantFromUI();
-    applyMatchLengthFromUI();
 
     document.getElementById('event-log').innerHTML = '';
 
@@ -56,8 +51,6 @@ export async function startHand() {
     gameState.communityCards = [];
     gameState.playerHoleCards = [];
     gameState.botHoleCards = [];
-    gameState.playerPickCards = [];
-    gameState.botPickCards = [];
     gameState.pot = 0;
     gameState.playerBetThisStreet = 0;
     gameState.botBetThisStreet = 0;
@@ -65,7 +58,6 @@ export async function startHand() {
     gameState.actionCount = 0;
     gameState.playerFolded = false;
     gameState.botFolded = false;
-    gameState.pick2Selected = [];
 
     logEvent(`── Hand #${gameState.handNumber} ──`, 'log-hand');
 
@@ -80,23 +72,16 @@ export async function startHand() {
     postBlind(bbPlayer, bb);
     gameState.streetBet = bb;
 
-    logEvent(`Blinds posted — SB $${sb.toFixed(2)} / BB $${bb.toFixed(2)}`);
     renderGameState();
 
-    const holeCount = gameState.variant === 'PICK2' ? 4 : 2;
-    const drawnCards = await drawCards(holeCount * 2);
+    const drawnCards = await drawCards(4);
+    gameState.playerHoleCards = drawnCards.slice(0, 2);
+    gameState.botHoleCards = drawnCards.slice(2, 4);
+    renderGameState();
 
-    if (gameState.variant === 'PICK2') {
-        gameState.playerPickCards = drawnCards.slice(0, 4);
-        gameState.botPickCards = drawnCards.slice(4, 8);
-        gameState.botHoleCards = botPick2(gameState.botPickCards);
-        showPick2UI(gameState.playerPickCards);
-    } else {
-        gameState.playerHoleCards = drawnCards.slice(0, 2);
-        gameState.botHoleCards = drawnCards.slice(2, 4);
-        renderGameState();
-        await startBettingRound('PREFLOP_BETTING');
-    }
+    gameState.phase = 'REDRAW';
+    logEvent('— Redraw Phase —');
+    showRedrawUI();
 }
 
 function postBlind(who, amount) {
@@ -256,8 +241,7 @@ async function dealCommunity(n, dealPhase, bettingPhase, streetName) {
     gameState.communityCards.push(...cards);
 
     const names = cards.map(cardShortName).join(' ');
-    logEvent(`${streetName}: ${names}`, 'log-flop');
-    logEvent(`— ${streetName} —`);
+    logEvent(`${streetName}: ${names}`);
 
     renderGameState();
     await delay(400);
@@ -301,19 +285,19 @@ async function runShowdown() {
         outcome = 'win';
         potChange = gameState.pot;
         gameState.playerStack = r2(gameState.playerStack + gameState.pot);
-        logEvent(`🏆 You win $${gameState.pot.toFixed(2)}!`, 'log-win');
+        logEvent(`🏆 You win! ${playerResult.name} beats ${botResult.name}`, 'log-win');
     } else if (botResult.rank > playerResult.rank) {
         outcome = 'lose';
         potChange = -gameState.pot;
         gameState.botStack = r2(gameState.botStack + gameState.pot);
-        logEvent(`Bot wins $${gameState.pot.toFixed(2)}.`, 'log-lose');
+        logEvent(`Bot wins. ${botResult.name} beats ${playerResult.name}`, 'log-lose');
     } else {
         outcome = 'tie';
         potChange = 0;
         const half = r2(gameState.pot / 2);
         gameState.playerStack = r2(gameState.playerStack + half);
         gameState.botStack = r2(gameState.botStack + half);
-        logEvent('🤝 Split pot.');
+        logEvent(`🤝 Tie. Both have ${playerResult.name}`);
     }
 
     renderGameState();
@@ -357,23 +341,29 @@ async function endHand(outcome, potChange, playerHandName, botHandName) {
     });
 }
 
-function applyVariantFromUI() {
-    const normal = document.getElementById('variant-normal');
-    const pick2 = document.getElementById('variant-pick2');
-    if (normal.classList.contains('active')) {
-        gameState.variant = 'NORMAL';
+export async function handleRedrawPhase(playerSwapIndex) {
+    if (playerSwapIndex !== -1) {
+        logEvent('You swapped a card.');
+        const newCard = await drawCards(1);
+        gameState.playerHoleCards[playerSwapIndex] = newCard[0];
     } else {
-        gameState.variant = 'PICK2';
+        logEvent('You kept your hand.');
     }
-}
 
-function applyMatchLengthFromUI() {
-    const bo3 = document.getElementById('match-bo3');
-    if (bo3.classList.contains('active')) {
-        gameState.matchLength = 'BO3';
-        gameState.matchPointsNeeded = 2;
+    renderGameState();
+    await delay(300);
+
+    const botSwapIndex = botRedrawDecision();
+    if (botSwapIndex !== -1) {
+        logEvent('Opponent swapped a card.');
+        const newCard = await drawCards(1);
+        gameState.botHoleCards[botSwapIndex] = newCard[0];
     } else {
-        gameState.matchLength = 'BO5';
-        gameState.matchPointsNeeded = 3;
+        logEvent('Opponent kept their hand.');
     }
+
+    renderGameState();
+    await delay(600);
+
+    await startBettingRound('PREFLOP_BETTING');
 }
