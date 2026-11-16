@@ -1,5 +1,7 @@
 # Poker Match
 
+**▶ Play it live:** https://dutes.github.io/poker_match/
+
 Poker Match is a fast, casual heads-up poker prototype designed for short, best-of-3 matches. Built with vanilla HTML, CSS, and JavaScript, the project focuses on visual polish, crisp animations, and a satisfying user experience—all without the need for complex frontend frameworks.
 
 ## Game Concept
