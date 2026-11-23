@@ -4,6 +4,10 @@
 
 Poker Match is a fast, casual heads-up poker prototype designed for short, best-of-3 matches. Built with vanilla HTML, CSS, and JavaScript, the project focuses on visual polish, crisp animations, and a satisfying user experience—all without the need for complex frontend frameworks.
 
+## Why I built it
+
+A poker session can last hours, and that's a big ask for a casual player with five minutes. Poker Match tests whether poker still works as a short match: heads-up, best of three hands, with a one-card redraw so every hand has a decision before the betting starts.
+
 ## Game Concept
 
 Each match is a **Best of 3 hands**. The first player to win 2 hands wins the match.
@@ -49,3 +53,7 @@ Since the game uses ES6 modules (`import`/`export`), it needs to be served via a
 - `evaluator.js`: Poker hand evaluation logic.
 - `bot.js`: Opponent decision-making logic.
 - `api.js`: Wrapper for the Deck of Cards API.
+
+## Licence
+
+© Brian Doutey. All rights reserved. The code is published so it can be read and the game played; it isn't licensed for reuse.
