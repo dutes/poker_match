@@ -4,6 +4,8 @@
 
 Poker Match is a fast, casual heads-up poker prototype designed for short, best-of-3 matches. Built with vanilla HTML, CSS, and JavaScript, the project focuses on visual polish, crisp animations, and a satisfying user experience—all without the need for complex frontend frameworks.
 
+<img src="docs/screenshot.png" alt="A hand in progress: pre-flop, holding the ace and eight of spades, with Call and Fold to choose from" width="500">
+
 ## Why I built it
 
 A poker session can last hours, and that's a big ask for a casual player with five minutes. Poker Match tests whether poker still works as a short match: heads-up, best of three hands, with a one-card redraw so every hand has a decision before the betting starts.
